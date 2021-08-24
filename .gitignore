@@ -1,0 +1,28 @@
+# dotenv environment variables file
+*.env
+*.env.test
+*.env.docker
+# config
+*config
+
+# Postgres data
+*postgres-data/
+
+# npm
+*node_modules/
+
+# build
+*build/
+*dist/
+
+# certificates
+.ssl
+*.crt
+*.key
+*.pem
+
+# Other
+*.idea
+
+# logs
+*.log
