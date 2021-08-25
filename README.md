@@ -50,6 +50,7 @@ cd post &&
 mkdir models &&
 touch controller.ts &&
 touch services.ts &&
+touch schema.ts &&
 cd models &&
 touch Post.ts
 ```
@@ -60,10 +61,12 @@ There we go, we've now created all necessary files and folders for our new Domai
     /Post.ts
   /controller.ts
   /services.ts
+  /schema.ts
 ```
 We will try to contain logic touching and regarding the post inside this "post" domain.
 - controller.ts - will be where we keep our express routes and rest-logic
 - services.ts - will be where we keep logic regarding retrieving updating and deleting from the db layer.
+- schema.ts - will be where we keep the schemas of how request should look like.
 - models - will be where we keep orm-models/entities strongly coupled with a post.
 - models/Post.ts - The orm entity for the post.
 
@@ -174,3 +177,103 @@ function registerRoutes(app: Application) {
 ```
 
 That's it, a new Domain implemented, A complete example of this integration can be found in the branch `example/implement-post-domain`
+
+
+### Relations
+Let's say we want each post to be owned by a user, and each user to own a collection of post.
+For this we need to create a relation between a post and a user.
+
+Lets start by making that change in the Post and User models.
+
+```typescript
+//Post.ts
+@ManyToOne(type => User, user => user.posts, {
+    lazy: true,
+  })
+@JoinColumn({name: 'user_id_fk'})
+user: Promise<User>
+```
+```typescript
+//User.ts
+@OneToMany(type => Post, post => post.user, {
+  cascade: true,
+  lazy: true,
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+})
+posts: Promise<Post[]>
+```
+We've now created a relation one user can own many posts, and a post can have one user.
+All we have to do now is to generate and run the migration.
+```bash
+npm run build
+npm run typeorm migration:generate -- -n UserRelationToPost
+npm run build
+npm run migrate:latest
+```
+
+Now, lets only make it possible to create a post if you are a signed-in user, we will assign that new post to that user.
+Fist we need to make some changes to the createPost method in `post/services.ts`
+```typescript
+interface createPostInput {
+  title: string
+  text: string
+  user: User
+}
+export const createPost = async (input: createPostInput): Promise<Post> => {
+  const post = Post.create({
+    text: input.text,
+    title: input.title,
+  })
+  post.user = Promise.resolve(input.user)
+  await post.save()
+  return post
+}
+```
+We extend the input type to include a user. We then make sure to add the user to the post when creating it.
+Next step will be to make sure to send in the correct user to the createPost method, from the controller.
+```typescript
+postRouter.post('/', loginRequired, asyncHandler(async (req, res) => {
+  const postInput: CreatePostInput = createPostSchema.validateSync(req.body)
+  const user: User = req.session.user
+  return res.status(201).json({
+    ok: true,
+    data: await createPost({...postInput, user})
+  } as RestResponse<Post>)
+}))
+```
+We add the `loginRequired` middleware to make sure that we have an authenticated user on this endpoint.
+This middleware will also add a user to req.session.user that we can use to retrieve the instance of the user
+making the request. We retrieve the user and send in along with the input data to the `createPost` method. We'll also
+make sure a user can not delete a post thats not their own.
+
+```typescript
+export const deletePost = async (id: number, user: User): Promise<void> => {
+  const res = await Post.createQueryBuilder('post')
+    .where('post.id = :id', {id})
+    .andWhere('post.user_id_fk = :userId', {userId: 1})
+    .delete()
+    .execute()
+  if (res.affected <= 0) {
+    throw new NotFoundError(`Could not delete post with id ${id}`)
+  }
+  return
+}
+```
+
+Lets add one more endpoint to the Post Domain called `/me` where we'll serve all posts linked to the user making the
+request.
+```typescript
+postRouter.get('/me', loginRequired, asyncHandler(async (req, res) => {
+  return res.json({
+    ok: true,
+    data: await req.session.user.posts
+  } as RestResponse<Post[]>)
+}))
+```
+As a final step, lets make all endpoints on this domain login required. We can simply chuck on the `loginRequired` 
+middleware on the router.
+```typescript
+const postRouter = Router()
+postRouter.use(loginRequired)
+```
