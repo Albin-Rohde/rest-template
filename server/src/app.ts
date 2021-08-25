@@ -80,6 +80,7 @@ async function startServer() {
 
 function registerRoutes(app: Application) {
   app.use('/user', userRoute)
+  app.use('/post', postRouter)
 }
 
 startServer()
