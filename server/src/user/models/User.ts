@@ -4,10 +4,12 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
-  Index,
+  Index, OneToMany,
   PrimaryGeneratedColumn,
   Unique
 } from "typeorm"
+import {Post} from "../../post/models/Post";
+import {JoinColumn} from "typeorm/browser";
 
 @Entity({name: "player"})
 @Unique(["email"])
@@ -33,4 +35,13 @@ export class User extends BaseEntity {
 
   @DeleteDateColumn()
   deleted_at: string
+
+  @OneToMany(type => Post, post => post.user, {
+    cascade: true,
+    lazy: true,
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn({name: 'post_fk'})
+  posts: Promise<Post[]>
 }

@@ -2,9 +2,12 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
-  DeleteDateColumn, Entity,
+  DeleteDateColumn,
+  Entity,
+  ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm"
+import {User} from "../../user/models/User";
 
 @Entity('post')
 export class Post extends BaseEntity {
@@ -22,4 +25,12 @@ export class Post extends BaseEntity {
 
   @DeleteDateColumn()
   deleted_at: string
+
+  @ManyToOne(type => User, user => user.posts, {
+    cascade: true,
+    lazy: true,
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE',
+  })
+  user: User
 }
