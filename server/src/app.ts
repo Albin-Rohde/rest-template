@@ -10,7 +10,6 @@ import session from "express-session";
 import {User} from "./user/models/User";
 import userRoute from "./user/controller";
 import {handleRestError} from "./middlewares";
-import postRouter from "./post/controller";
 
 dotenv.config({path: '.env'})
 
@@ -80,7 +79,6 @@ async function startServer() {
 
 function registerRoutes(app: Application) {
   app.use('/user', userRoute)
-  app.use('/post', postRouter)
 }
 
 startServer()
