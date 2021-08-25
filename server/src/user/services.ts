@@ -2,6 +2,9 @@ import { User } from './models/User'
 import {BadRequestError, CreateError} from "../error";
 import bcrypt from "bcrypt";
 
+export const getUserById = async (id: number) => {
+  return User.findOneOrFail({id})
+}
 
 export const getUserByEmail = async (email: string) => {
   return User.findOneOrFail({email})

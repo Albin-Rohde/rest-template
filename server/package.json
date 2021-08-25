@@ -47,12 +47,8 @@
     "typeorm": "^0.2.36",
     "typeorm-store": "^1.2.0",
     "uuid": "^8.3.2",
-<<<<<<< HEAD
     "winston": "^3.3.3",
     "yup": "^0.32.9"
-=======
-    "winston": "^3.3.3"
->>>>>>> 672ace4 (initial commit)
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.0",

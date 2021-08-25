@@ -39,7 +39,7 @@ export class CreateError extends ExpectedError {
   }
 }
 
-export class DbError extends Error {
+export class DbError extends ExpectedError {
   constructor(message: string) {
     super(message)
     this.name = this.constructor.name

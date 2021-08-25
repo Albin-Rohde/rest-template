@@ -9,13 +9,14 @@ import {
 import { RestResponse } from "./globalTypes";
 import { logger } from "./logger/logger";
 import {ValidationError} from "yup";
+import {getUserById} from "./user/services";
 
 
 const authUser = async (sessionUser: User) => {
   if(!sessionUser) {
     throw new AuthenticationError('NO_SESSION_USER')
   }
-  const user = await User.findOne(sessionUser.id, {relations: ['game', 'game._users']})
+  const user = await getUserById(sessionUser.id)
   if(!user) {
     throw new NotFoundError(`Could not find <User> with id ${sessionUser.id}`)
   }
@@ -25,11 +26,6 @@ const authUser = async (sessionUser: User) => {
   return user
 }
 
-export const loginRequired = async (req: Request, res: Response, next: NextFunction) => {
-  req.session.user = await authUser(req.session.user)
-  req.session.save(() => null)
-  next()
-}
 
 export const asyncHandler = fn => (req, res, next) => {
   return Promise
@@ -37,6 +33,11 @@ export const asyncHandler = fn => (req, res, next) => {
     .catch(next);
 };
 
+export const loginRequired = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  req.session.user = await authUser(req.session.user)
+  req.session.save(() => null)
+  next()
+})
 
 export const handleRestError = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   const response: RestResponse<null> = {
@@ -48,7 +49,7 @@ export const handleRestError = (err: Error, req: Request, res: Response, _next: 
     data: null
   }
   if (err instanceof ExpectedError) {
-    logger.error(err)
+    logger.warn(err)
     return res.status(200).json(response);
   }
   if (err instanceof ValidationError) {

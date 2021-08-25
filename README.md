@@ -176,9 +176,6 @@ function registerRoutes(app: Application) {
 }
 ```
 
-That's it, a new Domain implemented, A complete example of this integration can be found in the branch `example/implement-post-domain`
-
-
 ### Relations
 Let's say we want each post to be owned by a user, and each user to own a collection of post.
 For this we need to create a relation between a post and a user.
