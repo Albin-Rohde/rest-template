@@ -1,30 +1,10 @@
-import { User } from "./user/models/User";
-
 import { NextFunction, Request, Response } from "express";
 import {
-  AuthenticationError,
   ExpectedError,
-  NotFoundError,
 } from "./error";
 import { RestResponse } from "./globalTypes";
 import { logger } from "./logger/logger";
 import {ValidationError} from "yup";
-import {getUserById} from "./user/services";
-
-
-const authUser = async (sessionUser: User) => {
-  if(!sessionUser) {
-    throw new AuthenticationError('NO_SESSION_USER')
-  }
-  const user = await getUserById(sessionUser.id)
-  if(!user) {
-    throw new NotFoundError(`Could not find <User> with id ${sessionUser.id}`)
-  }
-  if(user.email !== sessionUser.email || user.password !== sessionUser.password) {
-    throw new AuthenticationError('AUTH_FAILED')
-  }
-  return user
-}
 
 
 export const asyncHandler = fn => (req, res, next) => {
@@ -32,12 +12,6 @@ export const asyncHandler = fn => (req, res, next) => {
     .resolve(fn(req, res, next))
     .catch(next);
 };
-
-export const loginRequired = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-  req.session.user = await authUser(req.session.user)
-  req.session.save(() => null)
-  next()
-})
 
 export const handleRestError = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   const response: RestResponse<null> = {
